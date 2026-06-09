@@ -41,11 +41,44 @@ body{margin:0;padding:0;background:linear-gradient(165deg,#f6edee 0%,#ead8db 55%
 @keyframes spin{to{transform:rotate(360deg)}}
 /* keep the RSVP form above full-bleed decorative photos */
 #stage .ele-form{z-index:50}
+/* splash — red envelope */
+#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:linear-gradient(165deg,#f6edee 0%,#ead8db 55%,#d9c0c6 100%);cursor:pointer;transition:opacity .8s ease}
+#splash.fade-out{opacity:0;pointer-events:none}
+/* envelope */
+#envelope{position:relative;width:min(300px,78vw);aspect-ratio:3/2;perspective:600px;filter:drop-shadow(0 8px 28px rgba(140,10,25,.38))}
+#envelope::after{content:'';position:absolute;bottom:-14px;left:15%;width:70%;height:14px;background:rgba(140,10,25,.18);filter:blur(10px);border-radius:50%;pointer-events:none}
+#env-body{position:absolute;inset:0;background:#c41230;border-radius:4px;overflow:hidden}
+/* fold lines — diamond pattern */
+#env-fold-b{position:absolute;bottom:0;left:0;width:100%;height:52%;clip-path:polygon(0 100%,50% 0,100% 100%);background:#b31028}
+#env-fold-l{position:absolute;top:0;left:0;width:50%;height:100%;clip-path:polygon(0 0,100% 50%,0 100%);background:rgba(0,0,0,.07)}
+#env-fold-r{position:absolute;top:0;right:0;width:50%;height:100%;clip-path:polygon(100% 0,0 50%,100% 100%);background:rgba(0,0,0,.07)}
+/* gold 囍 seal */
+#env-seal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;width:66px;height:66px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#d42040,#8e0d1e);border:2px solid #e8c96a;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(232,196,100,.2),0 3px 10px rgba(0,0,0,.25)}
+#env-seal span{font-size:26px;color:#e8c96a;font-family:serif;line-height:1}
+/* flap — downward triangle that rotates open on click */
+#env-flap{position:absolute;top:0;left:0;width:100%;height:52%;transform-origin:top center;transition:transform .55s cubic-bezier(.4,0,.2,1);z-index:5}
+#env-flap-s{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 86%);background:#a50f24}
+#envelope.open #env-flap{transform:rotateX(-175deg)}
+/* hint text */
+#env-hint{font-family:'siyuansongtijixi',serif;font-size:13px;color:#9e3040;letter-spacing:3px;animation:env-blink 2s ease-in-out infinite;user-select:none}
+@keyframes env-blink{0%,100%{opacity:.5}50%{opacity:1}}
 </style>
 <noscript><style>#stage .ani-wrap{opacity:1!important}</style></noscript>
 <script>(function(){var w=Math.min(window.innerWidth,480);document.documentElement.style.fontSize=(w/10)+'px';})();</script>
 </head>
 <body>
+<div id="splash">
+  <div id="envelope">
+    <div id="env-body">
+      <div id="env-fold-b"></div>
+      <div id="env-fold-l"></div>
+      <div id="env-fold-r"></div>
+      <div id="env-seal"><span>囍</span></div>
+    </div>
+    <div id="env-flap"><div id="env-flap-s"></div></div>
+  </div>
+  <div id="env-hint">點此開啟喜帖</div>
+</div>
 <div id="stage">
   <div id="page-list" class="hardware">
     <div class="page-item current">
@@ -93,9 +126,19 @@ body{margin:0;padding:0;background:linear-gradient(165deg,#f6edee 0%,#ead8db 55%
     btn.addEventListener('click',function(e){e.stopPropagation();if(audio.paused){play();}else{audio.pause();}});
     audio.addEventListener('play',function(){btn.classList.add('playing');});
     audio.addEventListener('pause',function(){btn.classList.remove('playing');});
-    play();
-    var once=function(){if(audio.paused)play();document.removeEventListener('touchstart',once);document.removeEventListener('click',once);};
-    document.addEventListener('touchstart',once,{passive:true});document.addEventListener('click',once);
+    // splash — envelope opens on click, user gesture enables autoplay
+    var splash=document.getElementById('splash'),splashDone=false;
+    function dismissSplash(){
+      if(splashDone)return;splashDone=true;
+      play();
+      document.getElementById('envelope').classList.add('open');
+      setTimeout(function(){
+        splash.classList.add('fade-out');
+        setTimeout(function(){splash.style.display='none';},800);
+      },450);
+    }
+    splash.addEventListener('click',dismissSplash);
+    splash.addEventListener('touchend',function(e){e.preventDefault();dismissSplash();},{passive:false});
     // RSVP form -> faithful local success alert (original config: succevent=alert)
     var submit=document.querySelector('.f-submit');
     if(submit){submit.style.cursor='pointer';submit.addEventListener('click',function(){alert(submit.getAttribute('succalert')||'提交成功，感謝您的參與！');});}
